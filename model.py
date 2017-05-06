@@ -42,7 +42,7 @@ class Model:
         post = self.sym2index.lookup(self.input['post']) # batch*len
         resp = self.sym2index.lookup(self.input['resp']) # batch*len
         resp_shift = tf.concat([tf.ones([batch_size, 1], dtype=tf.int32) * GO_ID,
-                            tf.split(resp, [max_len-1, 1], 1)[0]], 1) # batch*len
+                            tf.split(resp, [max_len-1, 1], axis=1)[0]], axis=1) # batch*len
         std_output = tf.one_hot(resp, len(vocab))
 
         post_embed = tf.nn.embedding_lookup(embed, post) # batch*len*embed_size
