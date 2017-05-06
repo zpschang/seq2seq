@@ -47,7 +47,7 @@ class seq2seq_model:
         resp_shift = tf.concat([tf.ones([batch_size, 1], dtype=tf.int64) * GO_ID,
                             tf.split(resp, [max_len-1, 1], axis=1)[0]], axis=1) # batch*len
         std_output = tf.one_hot(resp, len(vocab))
-        print post.get_shape()
+
         post_embed = tf.nn.embedding_lookup(self.embed, post) # batch*len*embed_size
         resp_embed = tf.nn.embedding_lookup(self.embed, resp_shift) # batch*len*embed_size
 
