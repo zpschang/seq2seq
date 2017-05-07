@@ -17,7 +17,7 @@ def bias(y):
     return tf.Variable(tf.constant(0.1, shape=[y]))
 
 def cross_entropy(x, y):
-    return tf.reduce_mean(-tf.reduce_sum(x * tf.log(tf.clip_by_value(y, 1e-10, 1.0)), 1))
+    return tf.reduce_mean(-tf.reduce_sum(x * tf.log(tf.clip_by_value(y, 1e-10, 1.0)), 2))
 
 class seq2seq_model:
     def __init__(self, vocab, embed, lstm_size, layer_num):
@@ -91,7 +91,12 @@ class seq2seq_model:
         feed_dict = {self.input[name]:feed_input[name] for name in self.input}
         print out_name, '=',
         res = sess.run(out_tensor + [self.train], feed_dict=feed_dict)
-        print res
+        string = res[-2]
+        for words in string:
+            for word in words:
+                print word,
+            print '\n',
+        print res[:-2]
     
     def inference(self, sess, feed_input):
         out_name = [name for name in self.output]
