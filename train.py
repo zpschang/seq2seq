@@ -29,7 +29,7 @@ while file:
     for i in range(len(vec)):
         vec[i] = eval(vec[i])
     embed.append(vec)
-    if k > 400000:
+    if k > 10000:
         break
 
 model = seq2seq_model(voc, embed, 100, 4)

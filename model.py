@@ -46,6 +46,7 @@ class seq2seq_model:
         resp = self.sym2index.lookup(self.input['resp']) # batch*len
         resp_shift = tf.concat([tf.ones([batch_size, 1], dtype=tf.int64) * GO_ID,
                             tf.split(resp, [max_len-1, 1], axis=1)[0]], axis=1) # batch*len
+        resp_mask = tf.reshape(tf.cumsum(tf.one_hot(self.input['resp_len']-1, max_len), reverse=True, axis=1), [-1, max_len])   # batch*len
         std_output = tf.one_hot(resp, len(vocab))
 
         post_embed = tf.nn.embedding_lookup(self.embed, post) # batch*len*embed_size
@@ -65,10 +66,14 @@ class seq2seq_model:
         W = weight(lstm_size, len(vocab))
         B = bias(len(vocab))
         poss = tf.nn.softmax(tf.tensordot(decoder_output, W, [[2], [0]]) + B) # batch*len*voc_size
-        loss = cross_entropy(std_output, poss) # []
+        def multi(x, y):
+            tmp = tf.transpose(x, perm=[2, 0, 1])
+            return tf.transpose(tmp * y, perm=[1, 2, 0])
+        loss = cross_entropy(multi(std_output, resp_mask), multi(poss, resp_mask)) # []
         int_output = tf.cast(tf.argmax(poss, axis=2), tf.int64) # batch*len
-        is_equal = tf.equal(int_output, resp) # batch*len
-        acc = tf.reduce_mean(tf.reduce_mean(tf.cast(is_equal, tf.float32), axis=1)) # []
+        is_equal = tf.equal(int_output * tf.cast(resp_mask, tf.int64), resp * tf.cast(resp_mask, tf.int64)) # batch*len
+        total_useless = tf.cast(batch_size * max_len, tf.float32) - tf.reduce_sum(resp_mask)
+        acc = (tf.reduce_sum(tf.cast(is_equal, tf.float32)) - total_useless) / tf.reduce_sum(resp_mask) # []
         str_output = self.index2sym.lookup(int_output) # batch*len
 
         self.train = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(loss)
